@@ -31,7 +31,7 @@ public class EventsREST_Client {
     //usiamo Apache Httpclient perchè molto più intuitivo della classi Java.net...
     CloseableHttpClient client = HttpClients.createDefault();
 
-    private void dumpRequest(ClassicHttpRequest request) {
+    private void logRequest(ClassicHttpRequest request) {
         try {
             System.out.println("* Metodo: " + request.getMethod());
             System.out.println("* URL: " + request.getRequestUri());
@@ -73,7 +73,7 @@ public class EventsREST_Client {
         }
     }
 
-    private void dumpResponse(ClassicHttpResponse response) {
+    private void logResponse(ClassicHttpResponse response) {
         System.out.println("* Headers: ");
         Header[] response_headers = response.getHeaders();
         for (Header header : response_headers) {
@@ -97,12 +97,12 @@ public class EventsREST_Client {
         System.out.println(description);
         System.out.println("--------------------------------------------------------------------------------");
         System.out.println("REQUEST: ");
-        dumpRequest(request);
+        logRequest(request);
         try {
             client.execute(request, response -> {
                 //preleviamo il contenuto della risposta
                 System.out.println("RESPONSE: ");
-                dumpResponse(response);
+                logResponse(response);
                 return null;
             });
         } catch (IOException ex) {
@@ -140,10 +140,9 @@ public class EventsREST_Client {
         post_request.setEntity(new UrlEncodedFormEntity(params));
         executeAndDump("Login", post_request);
         //ripetiamo la request per catturare il token...
-        Header ah;
-        try (CloseableHttpResponse response = client.execute(post_request)) {
-            ah = response.getFirstHeader("Authorization");
-        }
+        Header ah = client.execute(post_request, response -> {
+            return response.getFirstHeader("Authorization");
+        });
 
         post_request = new HttpPost(baseURI + "/events");
         //per una richiesta POST, prepariamo anche il payload specificandone il tipo
