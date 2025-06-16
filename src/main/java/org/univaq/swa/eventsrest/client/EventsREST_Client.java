@@ -10,7 +10,6 @@ import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ClassicHttpResponse;
@@ -27,11 +26,13 @@ public class EventsREST_Client {
 
     //una entry di esempio, già serializzata in JSON (come farebbe Google Gson, per esempio)  
     private static final String dummy_json_entry = "{ \"uid\" : \"IDabc\", \"summary\" : \"Event IDabc\", \"location\" : null, \"start\" : \"2024-04-10T13:48:48+02:00\", \"end\" : \"2024-04-10T13:48:48.295207+02:00\", \"categories\" : null, \"attachment\" : \"Y2lhbyBhIHR1dHRp\", \"participants\" : [ { \"name\" : \"Pinco Pallino #0\", \"email\" : \"pinco.pallino0@univaq.it\" }, { \"name\" : \"Pinco Pallino #1\", \"email\" : \"pinco.pallino1@univaq.it\" } ], \"recurrence\" : { \"count\" : null, \"interval\" : 2, \"until\" : \"2024-06-10T13:48+02:00\", \"frequency\" : \"WEEKLY\" } }";
+    //la struttura usata per passere le credenziali all'endpoint login2
+    private static final String dummy_json_credentials = "{ \"username\" : \"pippo\", \"password\" : \"pippopass\" }";
 
     //usiamo Apache Httpclient perchè molto più intuitivo della classi Java.net...
     CloseableHttpClient client = HttpClients.createDefault();
 
-    private void dumpRequest(ClassicHttpRequest request) {
+    private void logRequest(ClassicHttpRequest request) {
         try {
             System.out.println("* Metodo: " + request.getMethod());
             System.out.println("* URL: " + request.getRequestUri());
@@ -76,7 +77,7 @@ public class EventsREST_Client {
         }
     }
 
-    private void dumpResponse(ClassicHttpResponse response) {
+    private void logResponse(ClassicHttpResponse response) {
         System.out.println("* Headers: ");
         Header[] response_headers = response.getHeaders();
         for (Header header : response_headers) {
@@ -100,12 +101,12 @@ public class EventsREST_Client {
         System.out.println(description);
         System.out.println("--------------------------------------------------------------------------------");
         System.out.println("REQUEST: ");
-        dumpRequest(request);
+        logRequest(request);
         try {
             client.execute(request, response -> {
                 //preleviamo il contenuto della risposta
                 System.out.println("RESPONSE: ");
-                dumpResponse(response);
+                logResponse(response);
                 return null;
             });
         } catch (IOException ex) {
@@ -137,16 +138,20 @@ public class EventsREST_Client {
         executeAndDump("Sotto-item", get_request);
 
         HttpPost post_request = new HttpPost(baseURI + "/auth/login");
+        post_request.setEntity(new StringEntity(dummy_json_credentials, ContentType.APPLICATION_JSON));
+        executeAndDump("Login (con oggetto credentials)", post_request);
+
+        //ripetiamo la request per catturare il token...
+        Header ah = client.execute(post_request, response -> {
+            return response.getFirstHeader("Authorization");
+        });
+
+        post_request = new HttpPost(baseURI + "/auth/login2");
         List<NameValuePair> params = new ArrayList<>();
         params.add(new BasicNameValuePair("username", "pippo"));
         params.add(new BasicNameValuePair("password", "pippopass"));
-        post_request.setEntity(new UrlEncodedFormEntity(params));
-        executeAndDump("Login", post_request);
-        //ripetiamo la request per catturare il token...
-        Header ah;
-        try (CloseableHttpResponse response = client.execute(post_request)) {
-            ah = response.getFirstHeader("Authorization");
-        }
+        post_request.setEntity(new UrlEncodedFormEntity(params));        
+        executeAndDump("Login (con form parameters)", post_request);
 
         post_request = new HttpPost(baseURI + "/events");
         //per una richiesta POST, prepariamo anche il payload specificandone il tipo
