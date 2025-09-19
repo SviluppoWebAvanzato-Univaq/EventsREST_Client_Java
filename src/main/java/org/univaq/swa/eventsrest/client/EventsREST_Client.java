@@ -22,7 +22,7 @@ import org.apache.hc.core5.http.message.BasicNameValuePair;
 
 public class EventsREST_Client {
 
-    private static final String baseURI = "http://localhost:8081/EventsREST/rest";
+    private static final String baseURI = "http://localhost:8080/EventsREST/rest";
 
     //una entry di esempio, già serializzata in JSON (come farebbe Google Gson, per esempio)  
     private static final String dummy_json_entry = "{ \"uid\" : \"IDabc\", \"summary\" : \"Event IDabc\", \"location\" : null, \"start\" : \"2024-04-10T13:48:48+02:00\", \"end\" : \"2024-04-10T13:48:48.295207+02:00\", \"categories\" : null, \"attachment\" : \"Y2lhbyBhIHR1dHRp\", \"participants\" : [ { \"name\" : \"Pinco Pallino #0\", \"email\" : \"pinco.pallino0@univaq.it\" }, { \"name\" : \"Pinco Pallino #1\", \"email\" : \"pinco.pallino1@univaq.it\" } ], \"recurrence\" : { \"count\" : null, \"interval\" : 2, \"until\" : \"2024-06-10T13:48+02:00\", \"frequency\" : \"WEEKLY\" } }";
